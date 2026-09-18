@@ -99,10 +99,15 @@ only on real failures.
 
 Both paths pass, but they do not produce byte-identical files.
 
-- **`--scale` on the draw.io export works on macOS and breaks on Linux.** With draw.io 31.4.5,
-  any `--scale` or `--width` value makes the export die with `Empty export data`. `bench.sh`
-  tries the scaled export first and falls back to the default, so the container's PNG comes
-  out at 1004×944 instead of 1505×1415 — same diagram, fewer pixels.
+- **On Linux the draw.io export needs `--disable-gpu --disable-dev-shm-usage`.** Without them
+  it dies with `Empty export data` as soon as you pass `--scale` or `--width`, which looks
+  like a scaling bug and is not: it is GPU rasterization. With the flags, the same scaled
+  export works on both platforms. `bench.sh` passes them and still falls back to the default
+  scale if an export fails.
+- **Headless Electron can hang instead of failing.** On a GitHub Actions runner the export
+  never returned and burned the job's whole budget. Every export attempt is now capped by
+  `timeout`, and a hang is reported as skipped with the reason — the `.drawio` is validated
+  either way.
 - **Graphviz versions differ**, so the first two diagrams land slightly larger in the
   container than on the host.
 - **Electron refuses to run as root without `--no-sandbox`**, which is the container's case.

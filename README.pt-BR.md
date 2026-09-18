@@ -94,10 +94,15 @@ cada artefato. Teste sem dependência é pulado com o motivo, em vez de derrubar
 
 Os dois caminhos passam, mas não geram arquivos idênticos.
 
-- **`--scale` na exportação do draw.io funciona no macOS e quebra no Linux.** Com o draw.io
-  31.4.5, qualquer `--scale` ou `--width` mata a exportação com `Empty export data`. O
-  `bench.sh` tenta com escala e cai para o padrão, então o PNG do container sai 1004×944 em
-  vez de 1505×1415 — mesmo desenho, menos pixels.
+- **No Linux, a exportação do draw.io exige `--disable-gpu --disable-dev-shm-usage`.** Sem
+  eles, ela morre com `Empty export data` assim que você passa `--scale` ou `--width`, o que
+  parece bug de escala e não é: é rasterização por GPU. Com as flags, a mesma exportação em
+  escala funciona nas duas plataformas. O `bench.sh` passa as flags e mantém a queda para a
+  escala padrão caso alguma exportação falhe.
+- **Electron headless trava em vez de falhar.** Num runner do GitHub Actions a exportação
+  nunca retornou e consumiu o orçamento inteiro do job. Agora toda tentativa tem limite de
+  tempo por `timeout`, e travamento é reportado como pulado, com o motivo — o `.drawio` é
+  validado de qualquer forma.
 - **As versões do Graphviz diferem**, então os dois primeiros diagramas saem um pouco maiores
   no container do que na máquina.
 - **O Electron se recusa a rodar como root sem `--no-sandbox`**, que é o caso do container. O
