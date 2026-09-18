@@ -105,6 +105,10 @@ These make the difference between a pretty drawing and a drawing that survives t
   installed.
 - The original skill's intermediate representation (`--from ir`) **has no containers**. For a
   diagram with nested account and VPC, write the XML, which is the path of this workflow.
-- `--scale` is platform-specific. On macOS it works; on Linux with draw.io 31.4.5 any
-  scale, and also `--width`, makes the export die with `Empty export data`. Without the option, it
-  exports normally. Have a plan B when exporting in CI.
+- On Linux, add `--disable-gpu --disable-dev-shm-usage` to the export. Without them, draw.io
+  31.4.5 dies with `Empty export data` the moment you pass `--scale` or `--width` — it reads
+  like a scaling bug and it is GPU rasterization. With the flags, scaled exports behave the
+  same on macOS and Linux.
+- Headless Electron sometimes hangs instead of failing, which turns a broken export into a
+  stuck job — it burned 22 minutes of a CI run before we capped it. Wrap the call in
+  `timeout` whenever you export unattended.
