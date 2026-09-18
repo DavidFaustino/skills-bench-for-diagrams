@@ -1,38 +1,14 @@
 # skills-bench-for-diagrams
 
-Five tools for generating technical architecture diagrams, given the same diagram to draw,
-compared with artifacts you can inspect and a command that regenerates all of them.
+Five tools drew the same architecture diagram. Here is what came out, what it cost to write,
+and one command that regenerates all of it.
 
-Also included: one agent skill per tool, so you can reproduce each run in your own setup, and
-one optimized skill built on the winner.
+![The same diagram, drawn by four of the tools](docs/images/outputs-side-by-side.png)
 
-```bash
-git clone https://github.com/DavidFaustino/skills-bench-for-diagrams.git
-```
+The two on top decided the layout themselves. The two below took the positions from the author
+and handled routing, icons and validation. Same content, same fixture, four results.
 
 [Leia em português](README.pt-BR.md)
-
-## Why this exists
-
-There are dozens of agent skills that draw diagrams. There is no honest, reproducible
-comparison of the tools underneath them — the kind where you can see the input, the output,
-and what broke along the way.
-
-This repository is that comparison. Every result here was produced by the tool it is
-attributed to, on the same content, and the inputs are committed next to the outputs.
-
-## The diagram they all drew
-
-A fictional version-inventory system: a central AWS account with a private VPC across two
-availability zones, a web portal and a collector worker in application subnets, database,
-evidence storage and a secrets vault in data subnets, controlled egress, and outside the
-account the network of each environment — Staging, Homologation and Production — with ArgoCD
-and Kubernetes clusters.
-
-**It is a test fixture, not a reference architecture.** It was written to exercise what
-separates these tools: nested containers, vendor icons, edge labels, and elements that are
-deliberately undecided. The "route to confirm" node is there on purpose, to show how to mark
-what has not been decided yet.
 
 ## Results
 
@@ -44,36 +20,32 @@ what has not been decided yet.
 | [Eraser CLI](https://github.com/eraserlabs/eraser-diagrams) | you, with auto edge routing | PNG, HTML | no | **no** — fetches icons | MIT |
 | **[drawio-skill](https://github.com/Agents365-ai/drawio-skill)** | **you, with validation** | **`.drawio`, PNG, SVG, HTML, PPTX** | **yes** | **yes** | **MIT** |
 
-Measured on the committed artifacts:
+![Lines of input each tool needed for the same diagram](docs/images/input-size.svg)
 
-| Tool | Image | Aspect | File |
-| --- | --- | --- | --- |
-| `diagrams` + Graphviz | 1682×1607 | 1.05 | 182 KB |
-| MCP infra-diagram | 1682×1607 | 1.05 — same input as the run above | 182 KB PNG, 292 KB `.drawio` |
-| MCP aws-samples | interactive | reflows | 2.1 MB self-contained HTML |
-| Eraser CLI | 892×1032 | 0.86 | 88 KB, rendered in 1.2 s |
-| drawio-skill | 1505×1415 | 1.06 | 138 KB PNG, **11 KB** `.drawio` |
+`drawio-skill` wins on both axes at once: a third of Eraser's input, and the only tool that
+ships a validator — overlaps, crossings and edges routed through boxes, counted. The committed
+diagram scores 0. Its `.drawio` is also 11 KB against the 292 KB of the one converted from
+Graphviz, because it references shapes by name instead of embedding every icon as base64.
 
-Two things that table hides.
+Method, per-tool findings, measurements and platform differences:
+**[benchmark-diagrams/](benchmark-diagrams/)**
 
-**The aspect ratios are the ones we settled on, not the ones we got first.** Graphviz's default
-`TB` direction produced 1073×1343 — a portrait you cannot put on a 16:9 slide without
-cropping. Switching to `LR` fixed the ratio and left roughly a third of the canvas empty. That
-is the cost of automatic layout: you tune the knob you have, not the layout you want.
+## The fixture
 
-**The last column is the real story.** The hand-authored `.drawio` is 11 KB because it
-references shapes by name; the one converted from Graphviz is 292 KB because it embeds every
-icon as base64 — larger than the PNG it came with, and harder to diff in a pull request.
+A fictional version-inventory system: a central AWS account with a private VPC across two
+availability zones, a web portal and a collector worker in application subnets, database,
+evidence storage and a secrets vault in data subnets, controlled egress, and outside the
+account the network of each environment — Staging, Homologation and Production — with ArgoCD
+and Kubernetes clusters.
 
-An earlier round ran the same diagram with accented Portuguese labels. All five handle UTF-8
-correctly; the labels were translated for this repository, not because anything broke.
+**It is a test fixture, not a reference architecture.** It exercises what separates these
+tools: nested containers, vendor icons, edge labels, and elements that are deliberately
+undecided. The "route to confirm" node is there to show how to mark what nobody has decided
+yet.
 
-## Reproducing the results
+## Reproducing it
 
-Everything under `benchmark-diagrams/results/` is regenerated by one command from the inputs
-committed next to it.
-
-In a container, which is the only path that needs nothing installed:
+In a container, which needs nothing installed:
 
 ```bash
 docker build -t skills-bench-for-diagrams . && docker run --rm -t \
@@ -86,78 +58,17 @@ On your own machine:
 ./benchmark-diagrams/install.sh && ./benchmark-diagrams/bench.sh
 ```
 
-`install.sh` clones each tool at the commit it was tested on — `544a4c5` for the infra MCP
-server, `7ddc00a` for the AWS one, `7aa92f7` for drawio-skill — and pins `diagrams==0.25.1`
-and `@eraserlabs/diagrams-cli@0.1.1`.
+`install.sh` clones each tool at the commit it was tested on and pins every package version.
+`bench.sh` runs the five, times them, and prints the measured dimensions of every artifact. CI
+runs the same container weekly, so a tool that changes shows up as a diff in the artifacts.
 
-`bench.sh` runs the five, prints how long each took, and ends with the measured dimensions of
-every artifact. Any test whose dependency is missing is skipped with a reason rather than
-failing the run, so a partial environment still gives you partial results. It exits non-zero
-only on real failures.
+## The skills
 
-### Platform differences you will see
+Six skills ship with the benchmark: one per tool, one optimized build on the winner, and a
+twenty-line skill for smoke-testing a new runtime. They are plain `SKILL.md` directories and
+work with any model and any agent runtime — with a sixty-line reference loader to prove it.
 
-Both paths pass, but they do not produce byte-identical files.
-
-- **On Linux the draw.io export needs `--disable-gpu --disable-dev-shm-usage`.** Without them
-  it dies with `Empty export data` as soon as you pass `--scale` or `--width`, which looks
-  like a scaling bug and is not: it is GPU rasterization. With the flags, the same scaled
-  export works on both platforms. `bench.sh` passes them and still falls back to the default
-  scale if an export fails.
-- **Headless Electron can hang instead of failing.** On a GitHub Actions runner the export
-  never returned and burned the job's whole budget. Every export attempt is now capped by
-  `timeout`, and a hang is reported as skipped with the reason — the `.drawio` is validated
-  either way.
-- **Graphviz versions differ**, so the first two diagrams land slightly larger in the
-  container than on the host.
-- **Electron refuses to run as root without `--no-sandbox`**, which is the container's case.
-  `bench.sh` detects it. Headless also needs `xvfb-run` and the `xauth` package, which the
-  image installs.
-
-Because the container writes through the mounted volume, running it replaces the committed
-artifacts with its own. Mount the volume when you want to regenerate; leave it out when you
-only want to check that everything still runs.
-
-## What decided it
-
-The first three tools choose the layout for you. With nested containers — account, VPC,
-subnets — automatic layout reliably gets the proportion wrong, and no parameter fixes it. You
-accept the result or you redraw it.
-
-Eraser flips the deal: you place the nodes, it routes the edges around obstacles, resolves
-icons and measures text. Renders take about a second, so iterating is cheap.
-
-`drawio-skill` makes the same deal and adds three things nothing else has:
-
-- **shape lookup instead of guessing** — a searchable index of 10,446 official shapes, so
-  `mxgraph.aws4.resourceIcon;resIcon=secrets_manager` is retrieved, not invented;
-- **structural validation that returns a number** — overlaps, crossings and edges routed
-  through boxes, counted. The committed diagram scores 0;
-- **automated repair** — when two edge labels collide, one script redistributes the edge
-  endpoints across the correct sides of each shape.
-
-And its output is `.drawio`: your team edits it later without asking an agent.
-
-## Repository layout
-
-| Path | What it is |
-| --- | --- |
-| `benchmark-diagrams/` | The comparison: `install.sh`, `bench.sh`, and `results/` with each input next to the output it produced |
-| `skills-architecture-diagrams/` | Six skills: one per tool, one optimized build on the winner, and a 20-line skill for smoke-testing a new runtime |
-| `skills-architecture-diagrams/architecture-drawio/` | The optimized skill, self-contained — scripts, shape index, style reference and a complete example |
-| `skills-architecture-diagrams/RUN-IN-YOUR-OWN-AGENT.md` | For anyone porting these skills to another runtime: the three behaviors, a runnable loader, what to expect per model class, what to check in a model's license |
-| `NOTICE.md`, `licenses/` | Provenance of everything not written here |
-
-## Running these skills in your own agent
-
-Skills are a directory with a `SKILL.md` — an open format, not a vendor feature. A runtime
-needs three behaviors: advertise each skill's name and description in the system prompt
-(about 440 tokens for all six here), load the full `SKILL.md` when a task matches, and expose
-file reads plus a shell. Nothing else.
-
-`skills-architecture-diagrams/RUN-IN-YOUR-OWN-AGENT.md` has the details and a sixty-line
-reference loader you can run, plus what to expect from models of different sizes and what to
-check in a model's license before you ship it.
+**[skills-architecture-diagrams/](skills-architecture-diagrams/)**
 
 ## Maintainer
 
@@ -198,10 +109,9 @@ repository or get in touch at
 This repository is MIT. The compared tools are **not** vendored — they are cloned from source
 at the tested commit. The one exception is the optimized skill, which carries three MIT
 scripts and an Apache-2.0 shape index so it runs without installing the upstream skill. Full
-provenance, including the modification applied, is in `NOTICE.md`.
+provenance, including the modification applied, is in [NOTICE.md](NOTICE.md).
 
 No icon pack is redistributed. AWS's terms allow using their icons in architecture diagrams —
-which is what the committed PNGs do — but not redistributing the asset package itself.
-
-One tool in the comparison, a popular Excalidraw skill, ships no license file. Without a
-declared license it cannot be redistributed, so it is referenced and not copied.
+which is what the committed PNGs do — but not redistributing the asset package itself. One
+tool in the comparison, a popular Excalidraw skill, ships no license file, so it is referenced
+and not copied.

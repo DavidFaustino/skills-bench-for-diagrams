@@ -1,26 +1,16 @@
 # skills-bench-for-diagrams
 
-Cinco ferramentas de geração de diagramas técnicos de arquitetura, todas com o mesmo desenho
-para fazer, comparadas com artefatos que você pode inspecionar e um comando que regera todos.
+Cinco ferramentas desenharam o mesmo diagrama de arquitetura. Aqui está o que saiu, quanto
+custou escrever cada um, e um comando que regera tudo.
 
-Junto vão seis skills: uma por ferramenta, para replicar cada teste, e uma otimizada
-construída sobre a vencedora.
+![O mesmo diagrama, desenhado por quatro das ferramentas](docs/images/outputs-side-by-side.png)
 
-```bash
-git clone https://github.com/DavidFaustino/skills-bench-for-diagrams.git
-```
+As duas de cima decidiram o layout sozinhas. As duas de baixo receberam as posições do autor e
+cuidaram do roteamento, dos ícones e da validação. Mesmo conteúdo, mesmo caso de teste, quatro
+resultados.
 
 [Read in English](README.md) — o conteúdo do repositório está em inglês; este é o único
 documento em português.
-
-## Por que existe
-
-Existem dezenas de skills que desenham diagramas. Não existe uma comparação honesta e
-reproduzível das ferramentas por baixo delas — daquelas em que você vê a entrada, a saída e o
-que quebrou no caminho.
-
-Este repositório é essa comparação. Cada resultado foi produzido pela ferramenta a que é
-atribuído, sobre o mesmo conteúdo, e as entradas estão versionadas ao lado das saídas.
 
 ## O desenho que todas fizeram
 
@@ -44,29 +34,16 @@ marcar o que ainda não foi decidido.
 | [Eraser CLI](https://github.com/eraserlabs/eraser-diagrams) | você, com roteamento automático | PNG, HTML | não | **não** — busca ícones | MIT |
 | **[drawio-skill](https://github.com/Agents365-ai/drawio-skill)** | **você, com validação** | **`.drawio`, PNG, SVG, HTML, PPTX** | **sim** | **sim** | **MIT** |
 
-Medido sobre os artefatos versionados:
+![Linhas de entrada que cada ferramenta exigiu para o mesmo diagrama](docs/images/input-size.svg)
 
-| Ferramenta | Imagem | Proporção | Arquivo |
-| --- | --- | --- | --- |
-| `diagrams` + Graphviz | 1682×1607 | 1,05 | 182 KB |
-| MCP infra-diagram | 1682×1607 | 1,05 — mesma entrada do teste acima | 182 KB PNG, 292 KB `.drawio` |
-| MCP aws-samples | interativo | reflui | 2,1 MB de HTML autocontido |
-| Eraser CLI | 892×1032 | 0,86 | 88 KB, renderizado em 1,2 s |
-| drawio-skill | 1505×1415 | 1,06 | 138 KB PNG, **11 KB** `.drawio` |
+A `drawio-skill` ganha nos dois eixos ao mesmo tempo: um terço da entrada do Eraser, e é a única
+que traz um validador — sobreposições, cruzamentos e arestas atravessando caixas, contados. O
+diagrama versionado marca 0. E o `.drawio` dela tem 11 KB contra os 292 KB do convertido a
+partir do Graphviz, porque referencia as formas pelo nome em vez de embutir cada ícone em
+base64.
 
-Duas coisas que essa tabela esconde.
-
-**As proporções são as que chegamos, não as que saíram de primeira.** O `TB` padrão do
-Graphviz deu 1073×1343, retrato que não cabe em 16:9 sem cortar. Virar para `LR` corrigiu a
-proporção e deixou cerca de um terço da tela vazio. É o custo do layout automático: você ajusta
-o botão que tem, não o layout que quer.
-
-**A última coluna é a história real.** O `.drawio` escrito à mão tem 11 KB porque referencia
-as formas pelo nome; o convertido a partir do Graphviz tem 292 KB porque embute cada ícone em
-base64 — maior que o próprio PNG, e mais difícil de revisar num pull request.
-
-Uma rodada anterior usou os mesmos desenhos com rótulos em português e acentuação. As cinco
-lidam bem com UTF-8; os rótulos foram traduzidos para o repositório, não porque algo quebrou.
+Método, achados por ferramenta, medições e diferenças de plataforma:
+**[benchmark-diagrams/](benchmark-diagrams/)**
 
 ## Reproduzindo
 
@@ -90,67 +67,14 @@ O `install.sh` clona cada ferramenta no commit em que foi testada e fixa as vers
 O `bench.sh` roda os cinco, cronometra cada um e termina imprimindo as dimensões medidas de
 cada artefato. Teste sem dependência é pulado com o motivo, em vez de derrubar a execução.
 
-### Diferenças de plataforma
+## As skills
 
-Os dois caminhos passam, mas não geram arquivos idênticos.
+Seis skills acompanham o benchmark: uma por ferramenta, uma otimizada sobre a vencedora e uma de
+vinte linhas para validar um runtime novo. São diretórios com um `SKILL.md`, funcionam com
+qualquer modelo e qualquer runtime de agente — e há um loader de referência de sessenta linhas
+para provar.
 
-- **No Linux, a exportação do draw.io exige `--disable-gpu --disable-dev-shm-usage`.** Sem
-  eles, ela morre com `Empty export data` assim que você passa `--scale` ou `--width`, o que
-  parece bug de escala e não é: é rasterização por GPU. Com as flags, a mesma exportação em
-  escala funciona nas duas plataformas. O `bench.sh` passa as flags e mantém a queda para a
-  escala padrão caso alguma exportação falhe.
-- **Electron headless trava em vez de falhar.** Num runner do GitHub Actions a exportação
-  nunca retornou e consumiu o orçamento inteiro do job. Agora toda tentativa tem limite de
-  tempo por `timeout`, e travamento é reportado como pulado, com o motivo — o `.drawio` é
-  validado de qualquer forma.
-- **As versões do Graphviz diferem**, então os dois primeiros diagramas saem um pouco maiores
-  no container do que na máquina.
-- **O Electron se recusa a rodar como root sem `--no-sandbox`**, que é o caso do container. O
-  `bench.sh` detecta. Sem tela, ainda precisa de `xvfb-run` e do pacote `xauth`.
-
-Como o container escreve pelo volume montado, rodá-lo substitui os artefatos versionados pelos
-dele. Monte o volume quando quiser regerar; deixe de fora quando quiser só conferir que roda.
-
-## Por que a vencedora ganhou
-
-As três primeiras decidem o layout por você. Com containers aninhados — conta, VPC, subnets —
-o layout automático erra a proporção de forma consistente, e não há parâmetro que resolva. Ou
-você aceita, ou redesenha.
-
-O Eraser inverte o acordo: você posiciona, ele roteia as arestas em volta dos obstáculos,
-resolve ícones e mede o texto. O render leva cerca de um segundo, então iterar é barato.
-
-A `drawio-skill` faz o mesmo acordo e acrescenta três coisas que nenhuma outra tem:
-
-- **busca de forma em vez de chute** — um índice pesquisável com 10.446 formas oficiais, então
-  `mxgraph.aws4.resourceIcon;resIcon=secrets_manager` é consultado, não inventado;
-- **validação estrutural que devolve número** — sobreposições, cruzamentos e arestas
-  atravessando caixas, contados. O diagrama versionado marca 0;
-- **conserto automático** — quando dois rótulos de aresta colidem, um script redistribui as
-  pontas pelos lados certos de cada forma.
-
-E a saída é `.drawio`: seu time edita depois sem pedir nada a um agente.
-
-## Estrutura
-
-| Caminho | O que é |
-| --- | --- |
-| `benchmark-diagrams/` | A comparação: `install.sh`, `bench.sh` e `results/`, com cada entrada ao lado do resultado que produziu |
-| `skills-architecture-diagrams/` | Seis skills: uma por ferramenta, a otimizada sobre a vencedora e uma mínima para validar um runtime novo |
-| `skills-architecture-diagrams/architecture-drawio/` | A skill otimizada, autocontida — scripts, índice de formas, referência de estilos e um exemplo completo |
-| `skills-architecture-diagrams/RUN-IN-YOUR-OWN-AGENT.md` | Para quem vai portar estas skills para outro runtime: os três comportamentos, um loader que roda, o que esperar de cada porte de modelo e o que conferir na licença do modelo |
-| `NOTICE.md`, `licenses/` | Procedência de tudo que não foi escrito aqui |
-
-## Rodando as skills no seu próprio agente
-
-Skill é um diretório com um `SKILL.md` — formato aberto, não recurso de fornecedor. Um runtime
-precisa de três comportamentos: anunciar nome e descrição de cada skill no prompt de sistema,
-cerca de 440 tokens para as seis daqui; carregar o `SKILL.md` inteiro quando a tarefa casar; e
-expor leitura de arquivo mais um shell. Nada além disso.
-
-O `skills-architecture-diagrams/RUN-IN-YOUR-OWN-AGENT.md` tem os detalhes e um loader de
-referência de sessenta linhas que você roda, além do que esperar de modelos de portes
-diferentes e do que conferir na licença de um modelo antes de colocá-lo em produção.
+**[skills-architecture-diagrams/](skills-architecture-diagrams/)**
 
 ## Quem mantém
 
