@@ -1,0 +1,225 @@
+{
+  "title": "Version inventory — example",
+  "subtitle": "Read-only observation over the existing delivery",
+  "region": "us-east-1",
+  "direction": "LR",
+  "services": [
+    {
+      "id": "user",
+      "service": "Users",
+      "label": "Corporate user",
+      "role": "CISO, AppSec e DevSecOps",
+      "category": "general",
+      "external": true
+    },
+    {
+      "id": "alb",
+      "service": "Application Load Balancer",
+      "label": "Internal ALB",
+      "role": "HTTPS entry with no public internet",
+      "category": "networking",
+      "parentId": "sub-app"
+    },
+    {
+      "id": "portal",
+      "service": "Amazon Elastic Container Service",
+      "label": "Web portal + API",
+      "role": "Inventory, coverage and export with SSO and per-scope RBAC",
+      "category": "compute",
+      "parentId": "sub-app"
+    },
+    {
+      "id": "worker",
+      "service": "Amazon Elastic Container Service",
+      "label": "Collector worker",
+      "role": "Queries ArgoCD read-only, sanitizes and normalizes",
+      "category": "compute",
+      "parentId": "sub-app"
+    },
+    {
+      "id": "sched",
+      "service": "Amazon EventBridge",
+      "label": "Scheduler",
+      "role": "Triggers a cycle every 15 minutes",
+      "category": "integration",
+      "parentId": "sub-app"
+    },
+    {
+      "id": "fila",
+      "service": "Amazon Simple Queue Service",
+      "label": "Queue + DLQ",
+      "role": "Retry, per-instance isolation, visible failures",
+      "category": "integration",
+      "parentId": "sub-app"
+    },
+    {
+      "id": "rds",
+      "service": "Amazon RDS",
+      "label": "PostgreSQL",
+      "role": "Current state, catalog and history",
+      "category": "database",
+      "parentId": "sub-dados"
+    },
+    {
+      "id": "s3",
+      "service": "Amazon Simple Storage Service",
+      "label": "Evidence",
+      "role": "Sanitized snapshots with hash",
+      "category": "storage",
+      "parentId": "sub-dados"
+    },
+    {
+      "id": "cofre",
+      "service": "AWS Secrets Manager",
+      "label": "Secrets vault",
+      "role": "Read-only token per ArgoCD instance",
+      "category": "security",
+      "parentId": "sub-dados"
+    },
+    {
+      "id": "nat",
+      "service": "NAT Gateway",
+      "label": "Controlled egress",
+      "role": "Egress limited to authorized sources",
+      "category": "networking",
+      "parentId": "vpc"
+    },
+    {
+      "id": "dx",
+      "service": "AWS Direct Connect",
+      "label": "Rota entre redes",
+      "role": "Direct Connect ou VPN, proxy, DNS e CA",
+      "category": "networking",
+      "parentId": "conta"
+    },
+    {
+      "id": "argo",
+      "service": "ArgoCD",
+      "label": "ArgoCD API",
+      "role": "Applications, resource tree and Pods",
+      "category": "management",
+      "external": true,
+      "parentId": "pais"
+    },
+    {
+      "id": "k8s",
+      "service": "Kubernetes",
+      "label": "Kubernetes clusters",
+      "role": "Workloads e imagem observada nos Pods",
+      "category": "compute",
+      "external": true,
+      "parentId": "pais"
+    }
+  ],
+  "connections": [
+    {
+      "id": "c1",
+      "source": "user",
+      "target": "alb",
+      "type": "network",
+      "label": "internal HTTPS"
+    },
+    {
+      "id": "c2",
+      "source": "alb",
+      "target": "portal"
+    },
+    {
+      "id": "c3",
+      "source": "portal",
+      "target": "rds",
+      "type": "data"
+    },
+    {
+      "id": "c4",
+      "source": "portal",
+      "target": "s3",
+      "type": "data"
+    },
+    {
+      "id": "c5",
+      "source": "sched",
+      "target": "fila",
+      "type": "event"
+    },
+    {
+      "id": "c6",
+      "source": "fila",
+      "target": "worker",
+      "type": "event"
+    },
+    {
+      "id": "c7",
+      "source": "worker",
+      "target": "cofre",
+      "type": "iam"
+    },
+    {
+      "id": "c8",
+      "source": "worker",
+      "target": "rds",
+      "type": "data"
+    },
+    {
+      "id": "c9",
+      "source": "worker",
+      "target": "s3",
+      "type": "data"
+    },
+    {
+      "id": "c10",
+      "source": "worker",
+      "target": "nat",
+      "type": "network"
+    },
+    {
+      "id": "c11",
+      "source": "nat",
+      "target": "dx",
+      "type": "network"
+    },
+    {
+      "id": "c12",
+      "source": "dx",
+      "target": "argo",
+      "type": "network",
+      "label": "HTTPS 443 read-only"
+    },
+    {
+      "id": "c13",
+      "source": "argo",
+      "target": "k8s",
+      "label": "sync"
+    }
+  ],
+  "groups": [
+    {
+      "id": "conta",
+      "label": "Conta AWS central — região a definir",
+      "variant": "aws-cloud"
+    },
+    {
+      "id": "vpc",
+      "label": "VPC privada — 2 AZ",
+      "parent": "conta",
+      "variant": "vpc"
+    },
+    {
+      "id": "sub-app",
+      "label": "Private subnets — application",
+      "parent": "vpc",
+      "variant": "private-subnet"
+    },
+    {
+      "id": "sub-dados",
+      "label": "Private subnets — data",
+      "parent": "vpc",
+      "variant": "private-subnet"
+    },
+    {
+      "id": "pais",
+      "label": "Environment network — Staging, Homologation, Production",
+      "variant": "on-premises"
+    }
+  ]
+}

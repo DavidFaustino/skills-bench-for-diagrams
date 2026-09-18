@@ -1,0 +1,8 @@
+.vendor/
+node_modules/
+.venv/
+__pycache__/
+*.pyc
+.DS_Store
+benchmark-diagrams/results/**/generated-diagrams/
+benchmark-diagrams/results/**/*.dot

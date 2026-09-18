@@ -1,0 +1,37 @@
+name: bench
+
+# Rebuilds the five results from scratch, in the container, and fails if any run breaks.
+# This is what keeps the comparison honest: if a tool changes and the result changes with it,
+# the difference shows up in the artifacts' diff.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    # Monday, 06:00 UTC — catches breakage caused by a new release of any tool
+    - cron: "0 6 * * 1"
+
+jobs:
+  bench:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build the image
+        run: docker build -t skills-bench-for-diagrams .
+
+      - name: Run the benchmark
+        run: docker run --rm -t -v "$PWD/benchmark-diagrams/results:/app/benchmark-diagrams/results" skills-bench-for-diagrams
+
+      - name: Show what changed in the artifacts
+        run: git --no-pager diff --stat -- benchmark-diagrams/results/ || true
+
+      - name: Upload the results
+        uses: actions/upload-artifact@v4
+        with:
+          name: results
+          path: benchmark-diagrams/results/
+          retention-days: 14

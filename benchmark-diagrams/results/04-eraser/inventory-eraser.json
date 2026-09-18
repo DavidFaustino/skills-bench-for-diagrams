@@ -1,0 +1,320 @@
+{
+ "entities": [
+  {
+   "tag": "Icon",
+   "id": "user",
+   "icon": "user",
+   "size": "md",
+   "x": 130,
+   "y": 50,
+   "texts": [
+    {
+     "text": "Corporate user"
+    }
+   ]
+  },
+  {
+   "tag": "Group",
+   "id": "conta",
+   "isContainer": true,
+   "x": 40,
+   "y": 160,
+   "width": 860,
+   "height": 680,
+   "title": {
+    "text": "Central AWS account — region and account TBD"
+   },
+   "color": "blue"
+  },
+  {
+   "tag": "Group",
+   "id": "vpc",
+   "isContainer": true,
+   "containerId": "conta",
+   "x": 70,
+   "y": 215,
+   "width": 740,
+   "height": 485,
+   "title": {
+    "text": "Private VPC — 2 AZs, private subnets, no internet"
+   },
+   "color": "purple"
+  },
+  {
+   "tag": "Group",
+   "id": "subapp",
+   "isContainer": true,
+   "containerId": "vpc",
+   "x": 95,
+   "y": 265,
+   "width": 690,
+   "height": 250,
+   "title": {
+    "text": "Private subnets — application"
+   }
+  },
+  {
+   "tag": "Group",
+   "id": "subdata",
+   "isContainer": true,
+   "containerId": "vpc",
+   "x": 95,
+   "y": 545,
+   "width": 690,
+   "height": 140,
+   "title": {
+    "text": "Private subnets — data"
+   }
+  },
+  {
+   "tag": "Icon",
+   "id": "alb",
+   "icon": "aws-elastic-load-balancing",
+   "size": "md",
+   "containerId": "subapp",
+   "x": 140,
+   "y": 310,
+   "texts": [
+    {
+     "text": "Internal ALB"
+    }
+   ]
+  },
+  {
+   "tag": "Icon",
+   "id": "portal",
+   "icon": "aws-elastic-container-service",
+   "size": "md",
+   "containerId": "subapp",
+   "x": 380,
+   "y": 310,
+   "texts": [
+    {
+     "text": "Web portal + API"
+    }
+   ]
+  },
+  {
+   "tag": "Icon",
+   "id": "worker",
+   "icon": "aws-elastic-container-service",
+   "size": "md",
+   "containerId": "subapp",
+   "x": 620,
+   "y": 310,
+   "texts": [
+    {
+     "text": "Collector worker"
+    }
+   ]
+  },
+  {
+   "tag": "Icon",
+   "id": "sched",
+   "icon": "aws-eventbridge",
+   "size": "md",
+   "containerId": "subapp",
+   "x": 380,
+   "y": 410,
+   "texts": [
+    {
+     "text": "Scheduler, every 15 min"
+    }
+   ]
+  },
+  {
+   "tag": "Icon",
+   "id": "fila",
+   "icon": "aws-simple-queue-service",
+   "size": "md",
+   "containerId": "subapp",
+   "x": 620,
+   "y": 410,
+   "texts": [
+    {
+     "text": "Queue + DLQ"
+    }
+   ]
+  },
+  {
+   "tag": "Icon",
+   "id": "pg",
+   "icon": "aws-rds",
+   "size": "md",
+   "containerId": "subdata",
+   "x": 140,
+   "y": 580,
+   "texts": [
+    {
+     "text": "PostgreSQL"
+    }
+   ]
+  },
+  {
+   "tag": "Icon",
+   "id": "s3",
+   "icon": "aws-simple-storage-service",
+   "size": "md",
+   "containerId": "subdata",
+   "x": 380,
+   "y": 580,
+   "texts": [
+    {
+     "text": "Evidence"
+    }
+   ]
+  },
+  {
+   "tag": "Icon",
+   "id": "cofre",
+   "icon": "aws-secrets-manager",
+   "size": "md",
+   "containerId": "subdata",
+   "x": 620,
+   "y": 580,
+   "texts": [
+    {
+     "text": "Secrets vault"
+    }
+   ]
+  },
+  {
+   "tag": "Icon",
+   "id": "nat",
+   "icon": "aws-nat-gateway",
+   "size": "md",
+   "containerId": "conta",
+   "x": 200,
+   "y": 740,
+   "texts": [
+    {
+     "text": "Controlled egress"
+    }
+   ]
+  },
+  {
+   "tag": "Icon",
+   "id": "dx",
+   "icon": "aws-direct-connect",
+   "size": "md",
+   "containerId": "conta",
+   "x": 560,
+   "y": 740,
+   "texts": [
+    {
+     "text": "Route to confirm"
+    }
+   ]
+  },
+  {
+   "tag": "Group",
+   "id": "pais",
+   "isContainer": true,
+   "x": 40,
+   "y": 880,
+   "width": 860,
+   "height": 170,
+   "title": {
+    "text": "Environment network — Staging, Homologation, Production"
+   },
+   "color": "orange"
+  },
+  {
+   "tag": "Icon",
+   "id": "argo",
+   "icon": "argo",
+   "size": "md",
+   "containerId": "pais",
+   "x": 560,
+   "y": 940,
+   "texts": [
+    {
+     "text": "ArgoCD API"
+    }
+   ]
+  },
+  {
+   "tag": "Icon",
+   "id": "k8s",
+   "icon": "kubernetes",
+   "size": "md",
+   "containerId": "pais",
+   "x": 200,
+   "y": 940,
+   "texts": [
+    {
+     "text": "Kubernetes clusters"
+    }
+   ]
+  }
+ ],
+ "connections": [
+  {
+   "from": "user",
+   "to": "alb",
+   "endArrowhead": "triangle"
+  },
+  {
+   "from": "alb",
+   "to": "portal",
+   "endArrowhead": "triangle"
+  },
+  {
+   "from": "portal",
+   "to": "pg",
+   "endArrowhead": "triangle"
+  },
+  {
+   "from": "portal",
+   "to": "s3",
+   "endArrowhead": "triangle"
+  },
+  {
+   "from": "sched",
+   "to": "fila",
+   "endArrowhead": "triangle"
+  },
+  {
+   "from": "fila",
+   "to": "worker",
+   "endArrowhead": "triangle"
+  },
+  {
+   "from": "worker",
+   "to": "cofre",
+   "endArrowhead": "triangle"
+  },
+  {
+   "from": "worker",
+   "to": "pg",
+   "endArrowhead": "triangle"
+  },
+  {
+   "from": "worker",
+   "to": "s3",
+   "endArrowhead": "triangle"
+  },
+  {
+   "from": "worker",
+   "to": "nat",
+   "endArrowhead": "triangle"
+  },
+  {
+   "from": "nat",
+   "to": "dx",
+   "endArrowhead": "triangle"
+  },
+  {
+   "from": "dx",
+   "to": "argo",
+   "endArrowhead": "triangle",
+   "label": "HTTPS 443 read-only"
+  },
+  {
+   "from": "argo",
+   "to": "k8s",
+   "endArrowhead": "triangle",
+   "label": "sync"
+  }
+ ]
+}
